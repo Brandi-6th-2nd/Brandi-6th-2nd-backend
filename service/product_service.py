@@ -154,3 +154,12 @@ class ProductService:
                   
         except Exception as e:
             raise e
+
+    # 상품 상세 정보 함수
+    def product_detail(self, product_id, conn):
+        product_detail_dict = dict()
+        product_detail_dict['product_id'] = product_id
+        product_detail_dict['expired_at'] = ProductService.EXPIRED_AT # 가장 최신에 수정한 상품 디테일의 만료날짜를 먼 미래 값으로 설정함
+        product_detail       = self.product_dao.get_product_detail(product_detail_dict, conn)
+        product_detail_image = self.product_dao.get_product_image(product_detail_dict,conn)
+        return {"product_info" : product_detail, "product_image" : product_detail_image}

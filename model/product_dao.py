@@ -201,3 +201,41 @@ class ProductDao:
         """
         with conn.cursor() as cursor:
             cursor.execute(sql, product_image_dict)
+    
+    # 상품 상세정보 가져오기
+    def get_product_detail(self, product_detail_dict, conn):
+        sql = """
+            select 
+                p.code,
+                pd.is_sold,
+                pd.is_display,
+                fc.name as first_category,
+                sc.name as second_category,
+                pd.manufacture_company,
+                pd.manufacture_date,
+                pd.manufacture_country,
+                pd.name as product_name,
+                pd.description,
+                pd.detail_description 
+            from 
+                products as p 
+            join 
+                products_details as pd
+            on 
+                p.id = pd.product_id 
+            join 
+                first_categories as fc
+            on 
+                fc.id = pd.first_category_id 
+            join 
+                second_categories as sc
+            on 
+                sc.id = pd.second_category_id  
+            where 
+                pd.product_id = %(product_id)s 
+            and 
+                pd.expired_at = %(expired_at)s;
+        """
+        with conn.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute(sql, product_detail_dict)
+            return cursor.fetchone()
