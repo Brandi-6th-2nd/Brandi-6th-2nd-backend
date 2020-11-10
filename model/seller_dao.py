@@ -289,7 +289,7 @@ class SellerDao:
             if affected_row == 0:
                 raise Exception("master_sellerInfo 업데이트 불가")
 
-    def change_pw(self, pwData, conn):
+    def change_pw(self, new_password_data, conn):
         sql = """
             UPDATE 
                 accounts
@@ -299,7 +299,8 @@ class SellerDao:
                 id = %(account_id)s;
         """
         with conn.cursor(pymysql.cursors.DictCursor) as cursor:
-            cursor.execute(sql,pwData)
+            cursor.execute(sql,new_password_data)
+            
     def get_accountdata(self, userData, conn):
         sql = """
                  SELECT 
