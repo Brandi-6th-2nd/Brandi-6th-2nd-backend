@@ -48,7 +48,7 @@ class SellerService:
             
             #3. 계정 일치하고, 비밀번호도 일치하면
             if authorized:
-                access_token = jwt.encode({'account_id' : accountData['id']}, self.config['JWT_SECRET_KEY'], self.config['ALGORITHM'])
+                access_token = jwt.encode({'account_id' : accountData['id'], 'account_type_id' : accountData['account_type_id']}, self.config['JWT_SECRET_KEY'], self.config['ALGORITHM'])
                 return {
                     'account_id'      : accountData['id'],
                     'token'           : access_token.decode('UTF-8'),
@@ -114,3 +114,19 @@ class SellerService:
 
         update_info = self.seller_dao.master_updateSellerInfo(input_data, conn)
         return {'MESSAGE' : 'SUCCESS'}
+
+    def change_pw(self, pwData, conn):
+        try:
+            # 기존 비밀번호와 입력한 비밀번호가 맞는지 확인하기 위해 기존 데이터를 db에서 가져와 저장
+            accountData  = self.seller_dao.get_accountdata(pwData, conn)
+            # 사용자가 새로 입력한 비밀번호
+            new_password = pwData['new_password']
+            # 새로운 암호를 bcrypt를 사용하여 암호화  
+            pwData['new_password'] = bcrypt.hashpw(new_password.encode('UTF-8'), bcrypt.gensalt())
+            if bcrypt.checkpw(pwData['password'].encode('UTF-8'),accountData['password'].encode('UTF-8')):
+                # 새로운 패스워드를 database에 저장
+                self.seller_dao.change_pw(pwData, conn)
+            else:
+                return jsonify({"message":"비밀번호가 다릅니다"})
+        except Exception as e:
+            raise e

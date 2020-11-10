@@ -166,4 +166,33 @@ class SellerView:
                 conn.commit()    
                 return jsonify({'data' : seller_info}), 200 
             finally:
+                conn.close()
+        
+        @app.route("/change_pw", methods=['POST'])
+        @authorize
+        def change_pw():
+            """
+            로그인 API
+                API 작성: 문상호
+            Args:
+                user_data       : 로그인에 입력된 회원 정보
+                authorized_user : 인증된 유저
+            Returns:
+                {message: result message}, http status code
+            Exceptions:
+                KeyError  : JSON Key value가 잘못 입력되었을 때 에러처리.
+                TypeError : NoneType이 입력되었을 때 에러처리.
+            """
+            # try ~ except : JSON으로 받은 데이터 예외처리.
+            try:
+                conn    = get_connection() # DB 정보 연결
+                pw_data = request.json # 프론트로부터 전송받은 데이터를 json 형식으로 저장
+                pw_data['account_id'] = g.user
+                seller_service.change_pw(pw_data, conn)
+            except Exception as e:
+                raise e
+            else:
+                conn.commit()
+                return jsonify({"message" : "비밀번호 변경 성공"})
+            finally:
                 conn.close() 

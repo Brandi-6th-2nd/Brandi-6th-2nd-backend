@@ -288,3 +288,29 @@ class SellerDao:
             affected_row = cursor.execute(query, seller_data)
             if affected_row == 0:
                 raise Exception("master_sellerInfo 업데이트 불가")
+
+    def change_pw(self, pwData, conn):
+        sql = """
+            UPDATE 
+                accounts
+            SET
+                password = %(new_password)s
+            WHERE
+                id = %(account_id)s;
+        """
+        with conn.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute(sql,pwData)
+    def get_accountdata(self, userData, conn):
+        sql = """
+                 SELECT 
+                     id,
+                     account,
+                     password,
+                     account_type_id
+                 FROM accounts
+                 WHERE id = %(account_id)s
+             """
+        with conn.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute(sql,userData)
+            return cursor.fetchone() # 딕셔너리 형태로 결과값 반환
+    
