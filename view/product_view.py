@@ -145,3 +145,24 @@ class ProductView:
 
             finally:
                 conn.close()  
+
+        @app.route("/product/<int:product_id>", methods=['GET'])
+        def product_detail(product_id):
+            """
+            프로덕트(상품 상세) API
+                API 작성: 문상호
+            Returns:
+                {message: result message}, http status code
+            """
+            # try ~ except : JSON으로 받은 데이터 예외처리.
+            try:
+                conn    = get_connection() # DB 정보 연결
+                results = product_service.product_detail(product_id, conn)
+            except Exception as e:
+                conn.rollback() # DB에 반영되었던 사항들을 rollback(리셋)
+                raise e
+            else:
+                conn.commit()
+                return jsonify(results)
+            finally:
+                conn.close()
