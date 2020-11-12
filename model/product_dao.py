@@ -51,7 +51,6 @@ class ProductDao:
 
     #1. 상품 등록
     def create_product(self, product_dict, conn):
-        print(product_dict)
         sql = """
                 INSERT INTO products (
                     account_id,
@@ -70,7 +69,6 @@ class ProductDao:
 
     #2. 상품 디테일 등록
     def create_product_detail(self, product_detail_dict, conn):
-        print(product_detail_dict['sellOption'])
         sql = """
             INSERT INTO products_details (
                 product_id,
@@ -105,7 +103,6 @@ class ProductDao:
 
     # 상품 이미지 추가
     def create_product_image(self, product_image_dict, conn):
-        print(product_image_dict)
         sql = """
             INSERT INTO products_images (
                 url,
@@ -239,3 +236,35 @@ class ProductDao:
         with conn.cursor(pymysql.cursors.DictCursor) as cursor:
             cursor.execute(sql, product_detail_dict)
             return cursor.fetchone()
+
+    def get_products_list(self, filters, conn):
+        sql = """
+            select 
+                pi.url, 
+                pd.name, 
+                p.code, 
+                p.number, 
+                pd.is_sold, 
+                pd.is_display 
+            from 
+                products as p 
+            join 
+                products_details as pd 
+            on 
+                p.id = pd.product_id 
+            join 
+                products_images as pi 
+            on 
+                p.id = pi.product_id 
+            and 
+                `order` = %(main_image)s   
+        """
+        if filters['is_sold'] is not None:
+            sql += 'and pd.is_sold = %(is_sold)s'
+        if filters['is_display'] is not None:
+            sql += 'and pd.is_display = %(is_display)s'
+        sql += 'where pd.expired_at =%(expired_at)s;'
+
+        with conn.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute(sql, filters)
+            return cursor.fetchall()

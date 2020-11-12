@@ -6,8 +6,10 @@ import config
 
 from flask      import request, jsonify, g
 from connection import get_connection
-from exceptions import LoginError, ProductAddError, ProductUpdateError
+from exceptions import LoginError, ProductAddError, ProductUpdateError, ValidationError
 from functools  import wraps
+
+from utils.validation import *
 
 class ProductView:
     
@@ -28,7 +30,7 @@ class ProductView:
                 return f(*args, **kwargs)
             return decorated_function
 
-        @app.route("/product", methods=['GET'])
+        @app.route("/product/category", methods=['GET'])
         def product():
             """
             프로덕트(카테고리 리스트) API
@@ -64,27 +66,32 @@ class ProductView:
                 conn   = get_connection()
                 product_data = dict(request.form)
                 product_data['product_id'] = product_id
+                
                 detail_image = request.files.get('productDetailInfoImage',None)
-
                 if detail_image:
                     image_range_end = len(request.files)
                 else:
-                    image_range_end = len(request.files) - 1
+                    raise ProductUpdateError('PU003')
 
                 images = []
                 for i in range(1,image_range_end):
                     image = request.files.get(f'image_{i}', None)
                     if image is None:
-                        return jsonify({'message':'이미지순서 맞춰주시길 바랍니다'})
+                        raise ProductUpdateError('PU004')
                     images.append(image)
+
+                if images:
+                    pass
+                else:
+                    raise ProductUpdateError('PU005')
 
                 product_service.update_product(product_data, images, detail_image, g.user, conn)
 
             except KeyError: 
-                raise ProductUpdateError('C001')
+                raise ProductUpdateError('PU001')
 
             except TypeError:
-                raise ProductUpdateError('C002')
+                raise ProductUpdateError('PU002')
 
             except Exception as e:
                 conn.rollback()
@@ -111,29 +118,32 @@ class ProductView:
             try:
                 conn         = get_connection()
                 product_data = dict(request.form)
-                if request.files:
-                    detail_image = request.files.get('productDetailInfoImage',None)
-                    if detail_image:
-                        image_range_end = len(request.files)
-                    else:
-                        image_range_end = len(request.files) - 1
-
-                    images = []
-                    for i in range(1,image_range_end):
-                        image = request.files.get(f'image_{i}', None)
-                        if image is None:
-                            return jsonify({'message':'이미지순서 맞춰주시기 바랍니다'})
-                        images.append(image)
+                
+                detail_image = request.files.get('productDetailInfoImage',None)
+                if detail_image:
+                    image_range_end = len(request.files)
                 else:
-                    return jsonify({'message':'이미지를 등록해주세요'})
+                    raise ProductAddError('PA003')
 
+                images = []
+                for i in range(1, image_range_end):
+                    image = request.files.get(f'image_{i}', None)
+                    if image is None:
+                        raise ProductAddError('PA004')
+                    images.append(image)
+
+                if images:
+                    pass
+                else:
+                    raise ProductAddError('PA005')
+                
                 product_service.add_product(product_data, images, detail_image, g.user, conn)
 
             except KeyError: 
-                raise ProductAddError('C001')
+                raise ProductAddError('PA001')
 
             except TypeError:
-                raise ProductAddError('C002')
+                raise ProductAddError('PA002')
 
             except Exception as e:
                 conn.rollback()
@@ -159,10 +169,33 @@ class ProductView:
                 conn    = get_connection() # DB 정보 연결
                 results = product_service.product_detail(product_id, conn)
             except Exception as e:
-                conn.rollback() # DB에 반영되었던 사항들을 rollback(리셋)
                 raise e
             else:
-                conn.commit()
+                return jsonify(results)
+            finally:
+                conn.close()
+
+        @app.route("/products", methods=['GET'])
+        def products():
+            """
+            프로덕트 API
+                API 작성: 이도길
+            Returns:
+                {message: result message}, http status code
+            """
+            
+            try:
+                conn    = get_connection() # DB 정보 연결
+                is_sold    = request.args.get('is_sold', None)
+                is_display = request.args.get('is_display', None)
+
+                is_sold = validate_products_is_sold(is_sold)
+                is_display = validate_products_is_sold(is_display)
+
+                results = product_service.products_list(is_sold, is_display, conn)
+            except Exception as e:
+                raise e
+            else:
                 return jsonify(results)
             finally:
                 conn.close()

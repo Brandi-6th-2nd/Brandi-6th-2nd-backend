@@ -8,7 +8,7 @@ from view       import SellerView, ProductView
 from model      import SellerDao, ProductDao
 from service    import SellerService, ProductService
 
-from exceptions import LoginError, SignUpError
+from exceptions import LoginError, SignUpError, ProductAddError, ProductUpdateError, ValidationError
 
 class Services:
     pass
