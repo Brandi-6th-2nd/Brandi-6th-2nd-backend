@@ -117,6 +117,7 @@ class ProductService:
             product_id = self.product_dao.create_product(product_dict, conn)
             # 상품 디테일, 이미지 딕셔너리에 상품 아이디 추가
             product_detail_dict['product_id'] = product_id
+            
             filenames = []
             for i, image in enumerate(images):
                 filename = secure_filename(image.filename)
@@ -124,8 +125,8 @@ class ProductService:
 
             detail_info_filename = secure_filename(detail_image.filename)
             detail_image_url = self.upload_image(detail_image, detail_info_filename)
-
             product_detail_dict['productDetailInfoImage'] = detail_image_url
+
             self.product_dao.create_product_detail(product_detail_dict, conn)
             
             PRODUCT_IMAGE_COUNT = 5
@@ -163,3 +164,14 @@ class ProductService:
         product_detail       = self.product_dao.get_product_detail(product_detail_dict, conn)
         product_detail_image = self.product_dao.get_product_image(product_detail_dict,conn)
         return {"product_info" : product_detail, "product_image" : product_detail_image}
+
+    def products_list(self, is_sold, is_display, conn):
+        filters = dict()
+
+        filters['main_image'] = 1
+        filters['is_sold']    = is_sold
+        filters['is_display'] = is_display
+        filters['expired_at'] = ProductService.EXPIRED_AT
+
+        return self.product_dao.get_products_list(filters, conn)
+        

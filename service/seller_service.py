@@ -130,3 +130,4 @@ class SellerService:
                 return jsonify({"message":"비밀번호가 다릅니다"})
         except Exception as e:
             raise e
+
